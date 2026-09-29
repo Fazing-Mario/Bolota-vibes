@@ -1,0 +1,7 @@
+{
+  "name": "Bolota",
+  "description": "Rastreador de hábitos, saúde e pet virtual com IA, chat integrado e SOS contra recaídas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+

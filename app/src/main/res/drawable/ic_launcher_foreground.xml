@@ -1,0 +1,77 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Little Paws / Feet -->
+    <path
+        android:fillColor="#E5732A"
+        android:pathData="M39,83 a7,4.5 0 1,0 14,0 a7,4.5 0 1,0 -14,0 Z" />
+    <path
+        android:fillColor="#E5732A"
+        android:pathData="M55,83 a7,4.5 0 1,0 14,0 a7,4.5 0 1,0 -14,0 Z" />
+
+    <!-- Cute Arms -->
+    <path
+        android:fillColor="#FF8A3D"
+        android:pathData="M24,56 C21,60 21,66 26,67 C29,67 33,63 32,58 Z" />
+    <path
+        android:fillColor="#FF8A3D"
+        android:pathData="M84,56 C87,60 87,66 82,67 C79,67 75,63 76,58 Z" />
+
+    <!-- Chubby Body -->
+    <path
+        android:fillColor="#FF8A3D"
+        android:pathData="M54,26 C75,26 86,43 85,63 C84,81 72,84 54,84 C36,84 24,81 23,63 C22,43 33,26 54,26 Z" />
+
+    <!-- Sprout on Head -->
+    <path
+        android:fillColor="#3CC6B0"
+        android:strokeColor="#25A08C"
+        android:strokeWidth="1.2"
+        android:pathData="M54,26 C54,19 56,15 58,12 C53,13 50,17 50,22 Z" />
+    <path
+        android:fillColor="#3CC6B0"
+        android:pathData="M58,12 C62,10 65,13 62,16 C59,17 57,14 58,12 Z" />
+
+    <!-- Soft Tummy / Belly -->
+    <path
+        android:fillColor="#FFD2AE"
+        android:pathData="M54,54 C66,54 74,63 74,72 C74,79 66,82 54,82 C42,82 34,79 34,72 C34,63 42,54 54,54 Z" />
+
+    <!-- Rosy Cheeks -->
+    <path
+        android:fillColor="#FF7A6A"
+        android:pathData="M37,60 a4,2.8 0 1,0 8,0 a4,2.8 0 1,0 -8,0 Z" />
+    <path
+        android:fillColor="#FF7A6A"
+        android:pathData="M63,60 a4,2.8 0 1,0 8,0 a4,2.8 0 1,0 -8,0 Z" />
+
+    <!-- Left Eye -->
+    <path
+        android:fillColor="#23150C"
+        android:pathData="M44,52 a3.5,3.8 0 1,0 7,0 a3.5,3.8 0 1,0 -7,0 Z" />
+    <!-- Left Eye Shine -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M47,50.5 a1.2,1.2 0 1,0 2.4,0 a1.2,1.2 0 1,0 -2.4,0 Z" />
+
+    <!-- Right Eye -->
+    <path
+        android:fillColor="#23150C"
+        android:pathData="M57,52 a3.5,3.8 0 1,0 7,0 a3.5,3.8 0 1,0 -7,0 Z" />
+    <!-- Right Eye Shine -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M60,50.5 a1.2,1.2 0 1,0 2.4,0 a1.2,1.2 0 1,0 -2.4,0 Z" />
+
+    <!-- Sweet Smiling Mouth -->
+    <path
+        android:fillColor="#23150C"
+        android:strokeColor="#23150C"
+        android:strokeWidth="1.2"
+        android:strokeLineCap="round"
+        android:pathData="M50,60 Q54,64 58,60" />
+
+</vector>
