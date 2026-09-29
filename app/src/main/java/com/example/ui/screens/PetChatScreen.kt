@@ -1,5 +1,9 @@
 package com.example.ui.screens
 
+import android.Manifest
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -14,17 +18,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.NotificationsActive
+import androidx.compose.material.icons.filled.NotificationsOff
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.model.AchievementsList
+import com.example.notification.BolotaNotificationHelper
 import com.example.ui.components.BolotaPetView
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.BolotaUiState
@@ -522,9 +531,22 @@ fun PetChatScreen(
 
             2 -> {
                 // 3. SETTINGS TAB
+                val context = LocalContext.current
                 var petNameEdit by remember { mutableStateOf(uiState.petName) }
                 var screenGoalEdit by remember { mutableStateOf(uiState.screenGoal.toString()) }
                 var sleepGoalEdit by remember { mutableStateOf(uiState.sleepGoal.toString()) }
+
+                val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.RequestPermission()
+                ) { isGranted ->
+                    if (isGranted) {
+                        viewModel.updateReminderPreferences(
+                            enabled = true,
+                            hour = uiState.reminderHour,
+                            minute = uiState.reminderMinute
+                        )
+                    }
+                }
 
                 LazyColumn(
                     modifier = Modifier
@@ -584,6 +606,145 @@ fun PetChatScreen(
                                     modifier = Modifier.align(Alignment.End)
                                 ) {
                                     Text("Salvar Ajustes")
+                                }
+                            }
+                        }
+                    }
+
+                    // WORKMANAGER DAILY REMINDERS CARD
+                    item {
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(14.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                            border = CardDefaults.outlinedCardBorder().copy(
+                                brush = androidx.compose.ui.graphics.SolidColor(MaterialTheme.colorScheme.outline)
+                            )
+                        ) {
+                            Column(
+                                modifier = Modifier.padding(14.dp),
+                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        modifier = Modifier.weight(1f)
+                                    ) {
+                                        Icon(
+                                            imageVector = if (uiState.remindersEnabled) Icons.Default.NotificationsActive else Icons.Default.NotificationsOff,
+                                            contentDescription = null,
+                                            tint = if (uiState.remindersEnabled) BolotaAccentDark else MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.size(24.dp)
+                                        )
+                                        Column {
+                                            Text(
+                                                text = "Lembretes Diários (WorkManager)",
+                                                fontWeight = FontWeight.Bold,
+                                                fontSize = 15.sp,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                            )
+                                            Text(
+                                                text = "Alertas pontuais para hábitos e o ${uiState.petName}",
+                                                fontSize = 11.5.sp,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                            )
+                                        }
+                                    }
+
+                                    Switch(
+                                        checked = uiState.remindersEnabled,
+                                        onCheckedChange = { isChecked ->
+                                            if (isChecked && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !BolotaNotificationHelper.canSendNotifications(context)) {
+                                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                            } else {
+                                                viewModel.updateReminderPreferences(
+                                                    enabled = isChecked,
+                                                    hour = uiState.reminderHour,
+                                                    minute = uiState.reminderMinute
+                                                )
+                                            }
+                                        }
+                                    )
+                                }
+
+                                if (uiState.remindersEnabled) {
+                                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f))
+
+                                    Text(
+                                        text = "Horário do Lembrete Principal:",
+                                        fontSize = 12.5.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        color = MaterialTheme.colorScheme.onSurface
+                                    )
+
+                                    // Time presets chips
+                                    val presets = listOf(
+                                        Triple(8, 0, "08:00 (Manhã)"),
+                                        Triple(14, 0, "14:00 (Tarde)"),
+                                        Triple(20, 0, "20:00 (Noite)"),
+                                        Triple(21, 30, "21:30 (Dormir)")
+                                    )
+
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                                    ) {
+                                        presets.forEach { (h, m, label) ->
+                                            val isSelected = uiState.reminderHour == h && uiState.reminderMinute == m
+                                            FilterChip(
+                                                selected = isSelected,
+                                                onClick = {
+                                                    viewModel.updateReminderPreferences(
+                                                        enabled = true,
+                                                        hour = h,
+                                                        minute = m
+                                                    )
+                                                },
+                                                label = {
+                                                    Text(label, fontSize = 11.sp, fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal)
+                                                }
+                                            )
+                                        }
+                                    }
+
+                                    // Action row: WorkManager test trigger button
+                                    Row(
+                                        modifier = Modifier.fillMaxWidth(),
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Text(
+                                            text = "⚙️ Executado em background via WorkManager",
+                                            fontSize = 10.5.sp,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                            modifier = Modifier.weight(1f)
+                                        )
+
+                                        OutlinedButton(
+                                            onClick = {
+                                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !BolotaNotificationHelper.canSendNotifications(context)) {
+                                                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                                                } else {
+                                                    viewModel.triggerTestNotification()
+                                                }
+                                            },
+                                            shape = RoundedCornerShape(10.dp),
+                                            contentPadding = PaddingValues(horizontal = 10.dp, vertical = 6.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Default.Notifications,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(16.dp)
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text("Testar Agora", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                                        }
+                                    }
                                 }
                             }
                         }

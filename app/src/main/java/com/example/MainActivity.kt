@@ -1,11 +1,15 @@
 package com.example
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -28,6 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.notification.BolotaNotificationHelper
+import com.example.ui.screens.EstatisticasScreen
 import com.example.ui.screens.HojeScreen
 import com.example.ui.screens.PetChatScreen
 import com.example.ui.screens.SaudeScreen
@@ -37,6 +43,7 @@ import com.example.ui.viewmodel.BolotaViewModel
 
 enum class BolotaTab {
     HOJE,
+    ESTATISTICAS,
     SAUDE,
     PET
 }
@@ -48,9 +55,35 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
 
+        // Create notification channel for daily habit reminders
+        BolotaNotificationHelper.createNotificationChannel(this)
+
         setContent {
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val context = LocalContext.current
+
+            // Notification permission launcher for Android 13+ (API 33+)
+            val notificationPermissionLauncher = rememberLauncherForActivityResult(
+                contract = ActivityResultContracts.RequestPermission()
+            ) { isGranted ->
+                if (isGranted) {
+                    viewModel.updateReminderPreferences(
+                        enabled = true,
+                        hour = uiState.reminderHour,
+                        minute = uiState.reminderMinute
+                    )
+                }
+            }
+
+            // Check and request notification permission if reminders are enabled
+            LaunchedEffect(uiState.remindersEnabled) {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                    uiState.remindersEnabled &&
+                    !BolotaNotificationHelper.canSendNotifications(context)
+                ) {
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            }
 
             // Show Toast when requested
             LaunchedEffect(uiState.toastMessage) {
@@ -164,8 +197,21 @@ class MainActivity : ComponentActivity() {
                                         contentDescription = "Hoje"
                                     )
                                 },
-                                label = { Text("Hoje", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) },
+                                label = { Text("Hoje", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold) },
                                 modifier = Modifier.testTag("nav_tab_hoje")
+                            )
+
+                            NavigationBarItem(
+                                selected = currentTab == BolotaTab.ESTATISTICAS,
+                                onClick = { currentTab = BolotaTab.ESTATISTICAS },
+                                icon = {
+                                    Icon(
+                                        imageVector = Icons.Default.TrendingUp,
+                                        contentDescription = "Tendências"
+                                    )
+                                },
+                                label = { Text("Tendências", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold) },
+                                modifier = Modifier.testTag("nav_tab_estatisticas")
                             )
 
                             NavigationBarItem(
@@ -177,7 +223,7 @@ class MainActivity : ComponentActivity() {
                                         contentDescription = "Saúde"
                                     )
                                 },
-                                label = { Text("Saúde", fontSize = 12.sp, fontWeight = FontWeight.SemiBold) },
+                                label = { Text("Saúde", fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold) },
                                 modifier = Modifier.testTag("nav_tab_saude")
                             )
 
@@ -190,7 +236,7 @@ class MainActivity : ComponentActivity() {
                                         contentDescription = uiState.petName
                                     )
                                 },
-                                label = { Text(uiState.petName, fontSize = 12.sp, fontWeight = FontWeight.SemiBold) },
+                                label = { Text(uiState.petName, fontSize = 11.5.sp, fontWeight = FontWeight.SemiBold) },
                                 modifier = Modifier.testTag("nav_tab_pet")
                             )
                         }
@@ -206,6 +252,9 @@ class MainActivity : ComponentActivity() {
                                 uiState = uiState,
                                 viewModel = viewModel,
                                 onNavigateToChat = { currentTab = BolotaTab.PET }
+                            )
+                            BolotaTab.ESTATISTICAS -> EstatisticasScreen(
+                                uiState = uiState
                             )
                             BolotaTab.SAUDE -> SaudeScreen(
                                 uiState = uiState,

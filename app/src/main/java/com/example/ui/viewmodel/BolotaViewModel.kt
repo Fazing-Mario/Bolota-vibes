@@ -7,6 +7,8 @@ import com.example.data.ai.GeminiClient
 import com.example.data.local.BolotaDatabase
 import com.example.data.local.BolotaRepository
 import com.example.data.model.*
+import com.example.notification.BolotaNotificationHelper
+import com.example.notification.ReminderScheduler
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import org.json.JSONArray
@@ -49,7 +51,10 @@ data class BolotaUiState(
     val isChatThinking: Boolean = false,
     val isSosOpen: Boolean = false,
     val triggerPrompt: Pair<String, String>? = null, // habitId, kind
-    val toastMessage: String? = null
+    val toastMessage: String? = null,
+    val remindersEnabled: Boolean = true,
+    val reminderHour: Int = 20,
+    val reminderMinute: Int = 0
 )
 
 class BolotaViewModel(application: Application) : AndroidViewModel(application) {
@@ -63,6 +68,20 @@ class BolotaViewModel(application: Application) : AndroidViewModel(application) 
     init {
         val database = BolotaDatabase.getInstance(application)
         repository = BolotaRepository(database.bolotaDao())
+
+        // Load reminder preferences from scheduler
+        val remindersOn = ReminderScheduler.isRemindersEnabled(application)
+        val (remHour, remMin) = ReminderScheduler.getReminderTime(application)
+        _uiState.update {
+            it.copy(
+                remindersEnabled = remindersOn,
+                reminderHour = remHour,
+                reminderMinute = remMin
+            )
+        }
+        if (remindersOn) {
+            ReminderScheduler.scheduleDailyReminder(application, remHour, remMin)
+        }
 
         viewModelScope.launch {
             repository.initializeDefaultsIfNeeded()
@@ -734,6 +753,30 @@ class BolotaViewModel(application: Application) : AndroidViewModel(application) 
             else ->
                 "Tô aqui com você! Foco no que a gente combinou e um passo de cada vez. O que você vai fazer nos próximos 15 minutos?"
         }
+    }
+
+    fun updateReminderPreferences(enabled: Boolean, hour: Int, minute: Int) {
+        val app = getApplication<Application>()
+        ReminderScheduler.setReminderPreferences(app, enabled, hour, minute)
+        _uiState.update {
+            it.copy(
+                remindersEnabled = enabled,
+                reminderHour = hour,
+                reminderMinute = minute
+            )
+        }
+        if (enabled) {
+            val timeStr = String.format(java.util.Locale.getDefault(), "%02d:%02d", hour, minute)
+            showToast("Lembretes diários programados para as $timeStr!")
+        } else {
+            showToast("Lembretes diários desativados.")
+        }
+    }
+
+    fun triggerTestNotification() {
+        val app = getApplication<Application>()
+        ReminderScheduler.triggerImmediateTestReminder(app)
+        showToast("Enviando lembrete de teste via WorkManager...")
     }
 
     private fun showToast(msg: String) {
